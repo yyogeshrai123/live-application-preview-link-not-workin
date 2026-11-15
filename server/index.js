@@ -215,6 +215,20 @@ app.get('/api/financial/summary', authenticateToken, requireRoles('CEO', 'ADMIN'
   });
 });
 
+// --- State Reset Endpoint ---
+app.post('/api/reset', authenticateToken, (req, res) => {
+  state.leads = [];
+  state.loans = [];
+  state.disbursements = [];
+  state.locks = [];
+  state.lenderPayments = [];
+  state.partnerPayouts = [];
+  state.idRequests = [];
+  state.auditLogs = [];
+  state.notifications = [];
+  res.json({ success: true, message: 'Server state reset to clean production baseline' });
+});
+
 // Start Express server if run directly
 if (process.env.NODE_ENV !== 'test') {
   app.listen(PORT, () => {
