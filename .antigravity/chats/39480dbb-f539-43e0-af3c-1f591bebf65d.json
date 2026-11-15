@@ -76,6 +76,18 @@
       "created_at": "2026-11-15T14:39:27.942Z",
       "sender": "macOS",
       "is_cancelled": false
+    },
+    {
+      "id": "d661c852-2d79-48a5-9c87-550f5f446157",
+      "role": "user",
+      "content": "Reset all demo data back to clean production state",
+      "status": "pending",
+      "model": "gemini-3.8-flash-high",
+      "client_type": "gemini-bridge",
+      "parent_message_id": null,
+      "created_at": "2026-11-15T14:52:33.202Z",
+      "sender": "ios",
+      "is_cancelled": false
     }
   ]
 }
