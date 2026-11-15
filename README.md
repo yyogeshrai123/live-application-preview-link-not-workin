@@ -25,8 +25,8 @@ Open the live system in the Antigravity App or browser:
 
 | Role | Access Scope | Key Permissions & Responsibilities |
 |---|---|---|
-| **CEO** | Global / Full Access | Executive command, configure partner payout rules, manage locked amounts, final KYC approval, manage lenders, view all audit logs and financial dashboards. |
-| **Admin** | Operations & Compliance | Manage lenders, verify authorized bank transfers, first-tier KYC review, assign leads, view all loan applications and financial reports. |
+| **CEO** | Global / Full Access | Executive command, configure partner payout rules, manage locked amounts, final KYC approval, manage lenders, view all audit logs, **sole authority to approve/reject lead edit & deletion requests**. |
+| **Admin** | Operations & Compliance | Manage lenders, verify authorized bank transfers, first-tier KYC review, assign leads, view all loan applications, **submit lead edit & deletion requests (subject to CEO approval)**. |
 | **Sales Team Manager** | Team Scoped | View assigned Sales Officers and Channel Partners, track team pipeline, assign leads to team officers, submit KYC ID requests for new recruits. |
 | **Sales Officer** | Assigned & Created Leads | Create customer leads (**Strictly auto-assigned to logged-in Officer**), update file progress, add follow-up notes, track loan sanctions. |
 | **Channel Partner (DSA)** | Partner Isolated | Submit loan files, view real-time status of own submitted files. **Zero access to other partners, lender commissions, or company financial reports.** |
