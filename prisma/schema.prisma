@@ -1,0 +1,262 @@
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+enum Role {
+  CEO
+  ADMIN
+  MANAGER
+  OFFICER
+  PARTNER
+}
+
+enum IdRequestStatus {
+  PENDING_ADMIN
+  PENDING_CEO
+  APPROVED
+  REJECTED
+}
+
+enum LeadStatus {
+  NEW
+  ASSIGNED
+  CONTACTED
+  DOCUMENTS_PENDING
+  DOCUMENTS_RECEIVED
+  APPLICATION_SUBMITTED
+  UNDER_PROCESS
+  SANCTIONED
+  REJECTED
+  DISBURSEMENT_PENDING
+  PARTIALLY_DISBURSED
+  FULLY_DISBURSED
+  CLOSED
+}
+
+enum TransferStatus {
+  PENDING
+  SUCCESSFUL
+  FAILED
+  REVERSED
+}
+
+enum LockStatus {
+  ACTIVE
+  PARTIALLY_RELEASED
+  RELEASED
+}
+
+model User {
+  id               String          @id @default(uuid())
+  email            String          @unique
+  passwordHash     String
+  fullName         String
+  phoneNumber      String          @unique
+  role             Role
+  isActive         Boolean         @default(true)
+  managerId        String?
+  manager          User?           @relation("ManagerSubordinates", fields: [managerId], references: [id])
+  subordinates     User[]          @relation("ManagerSubordinates")
+  teamsManaged     Team[]          @relation("ManagedTeams")
+  teamMemberships  TeamMember[]
+  createdLeads     Lead[]          @relation("LeadCreator")
+  assignedLeads    Lead[]          @relation("LeadAssignee")
+  partnerLeads     Lead[]          @relation("LeadPartner")
+  createdAt        DateTime        @default(now())
+  updatedAt        DateTime        @updatedAt
+}
+
+model Team {
+  id          String       @id @default(uuid())
+  name        String
+  managerId   String
+  manager     User         @relation("ManagedTeams", fields: [managerId], references: [id])
+  members     TeamMember[]
+  createdAt   DateTime     @default(now())
+  updatedAt   DateTime     @updatedAt
+}
+
+model TeamMember {
+  id        String   @id @default(uuid())
+  teamId    String
+  userId    String
+  team      Team     @relation(fields: [teamId], references: [id], onDelete: Cascade)
+  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  joinedAt  DateTime @default(now())
+
+  @@unique([teamId, userId])
+}
+
+model Lender {
+  id          String          @id @default(uuid())
+  name        String          @unique
+  code        String?         @unique
+  isActive    Boolean         @default(true)
+  contacts    LenderContact[]
+  leads       Lead[]
+  loans       LoanApplication[]
+  createdAt   DateTime        @default(now())
+  updatedAt   DateTime        @updatedAt
+}
+
+model LenderContact {
+  id                String   @id @default(uuid())
+  lenderId          String
+  asmName           String
+  asmContactNumber  String
+  email             String?
+  isActive          Boolean  @default(true)
+  lender            Lender   @relation(fields: [lenderId], references: [id], onDelete: Cascade)
+  leads             Lead[]
+  createdAt         DateTime @default(now())
+}
+
+model Customer {
+  id            String               @id @default(uuid())
+  fullName      String
+  fatherName    String
+  contactNumber String
+  address       String
+  coApplicants  CoApplicant[]
+  bankAccounts  CustomerBankAccount[]
+  vehicles      Vehicle[]
+  leads         Lead[]
+  createdAt     DateTime             @default(now())
+  updatedAt     DateTime             @updatedAt
+}
+
+model CoApplicant {
+  id            String   @id @default(uuid())
+  customerId    String
+  fullName      String
+  contactNumber String
+  relationship  String?
+  customer      Customer @relation(fields: [customerId], references: [id], onDelete: Cascade)
+  createdAt     DateTime @default(now())
+}
+
+model CustomerBankAccount {
+  id                  String   @id @default(uuid())
+  customerId          String
+  bankName            String
+  accountNumber       String
+  maskedAccountNumber String
+  ifscCode            String
+  branchName          String?
+  isPrimary           Boolean  @default(true)
+  customer            Customer @relation(fields: [customerId], references: [id], onDelete: Cascade)
+  createdAt           DateTime @default(now())
+}
+
+model Vehicle {
+  id            String   @id @default(uuid())
+  customerId    String
+  vehicleNumber String   @unique
+  make          String
+  model         String
+  customer      Customer @relation(fields: [customerId], references: [id], onDelete: Cascade)
+  leads         Lead[]
+  createdAt     DateTime @default(now())
+}
+
+model Lead {
+  id                 String           @id @default(uuid())
+  fileReference      String
+  customerId         String
+  customer           Customer         @relation(fields: [customerId], references: [id])
+  vehicleId          String
+  vehicle            Vehicle          @relation(fields: [vehicleId], references: [id])
+  lenderId           String
+  lender             Lender           @relation(fields: [lenderId], references: [id])
+  lenderContactId    String?
+  lenderContact      LenderContact?   @relation(fields: [lenderContactId], references: [id])
+  asmName            String
+  asmContactNumber   String
+  createdById        String
+  createdBy          User             @relation("LeadCreator", fields: [createdById], references: [id])
+  assignedOfficerId  String
+  assignedOfficer    User             @relation("LeadAssignee", fields: [assignedOfficerId], references: [id])
+  channelPartnerId   String?
+  channelPartner     User?            @relation("LeadPartner", fields: [channelPartnerId], references: [id])
+  status             LeadStatus       @default(NEW)
+  followUpDate       DateTime?
+  remarks            String?
+  loanApplications   LoanApplication[]
+  createdAt          DateTime         @default(now())
+  updatedAt          DateTime         @updatedAt
+}
+
+model LoanApplication {
+  id                    String                    @id @default(uuid())
+  leadId                String
+  lead                  Lead                      @relation(fields: [leadId], references: [id])
+  applicationNumber     String                    @unique
+  lenderId              String
+  lender                Lender                    @relation(fields: [lenderId], references: [id])
+  loanType              String                    @default("Vehicle Loan")
+  appliedAmount         Decimal                   @db.Decimal(18, 2)
+  sanctionedAmount      Decimal                   @default(0.00) @db.Decimal(18, 2)
+  applicationDate       DateTime
+  sanctionDate          DateTime?
+  status                String                    @default("UNDER_PROCESS")
+  lenderReferenceNumber String?
+  rejectionReason       String?
+  remarks               String?
+  disbursements         DisbursementTransaction[]
+  locks                 DisbursementLock[]
+  partnerPayout         PartnerPayout?
+  createdAt             DateTime                  @default(now())
+  updatedAt             DateTime                  @updatedAt
+}
+
+model DisbursementTransaction {
+  id                  String         @id @default(uuid())
+  loanId              String
+  loan                LoanApplication @relation(fields: [loanId], references: [id])
+  accountHolderName   String
+  transferAmount      Decimal        @db.Decimal(18, 2)
+  transferDate        DateTime       @default(now())
+  utrNumber           String
+  status              TransferStatus @default(PENDING)
+  bankProofUrl        String?
+  remarks             String?
+  createdById         String
+  verifiedById        String?
+  verifiedAt          DateTime?
+  idempotencyKey      String?        @unique
+  createdAt           DateTime       @default(now())
+  updatedAt           DateTime       @updatedAt
+}
+
+model DisbursementLock {
+  id             String        @id @default(uuid())
+  loanId         String
+  loan           LoanApplication @relation(fields: [loanId], references: [id])
+  lockedAmount   Decimal       @db.Decimal(18, 2)
+  releasedAmount Decimal       @default(0.00) @db.Decimal(18, 2)
+  status         LockStatus    @default(ACTIVE)
+  reason         String
+  createdById    String
+  createdAt      DateTime      @default(now())
+  updatedAt      DateTime      @updatedAt
+}
+
+model PartnerPayout {
+  id                        String          @id @default(uuid())
+  partnerId                 String
+  loanId                    String          @unique
+  loan                      LoanApplication @relation(fields: [loanId], references: [id])
+  sanctionedAmount          Decimal         @db.Decimal(18, 2)
+  payoutPercentageSnapshot  Decimal         @db.Decimal(5, 2)
+  payableAmount             Decimal         @db.Decimal(18, 2)
+  paidAmount                Decimal         @default(0.00) @db.Decimal(18, 2)
+  pendingAmount             Decimal         @db.Decimal(18, 2)
+  status                    String          @default("PENDING")
+  createdAt                 DateTime        @default(now())
+  updatedAt                 DateTime        @updatedAt
+}
