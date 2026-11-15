@@ -64,6 +64,18 @@
       "created_at": "2026-11-15T14:33:13.653Z",
       "sender": "ios",
       "is_cancelled": false
+    },
+    {
+      "id": "d05a6a08-fb6f-41b3-929c-ebf916aebfe6",
+      "role": "agent",
+      "content": "The live application preview link has been fixed.\n\n### 🔍 Cause of the Issue\n1. **Uncompiled Root Entry Point:** The preview server serves [index.html](file:///home/agent/workspace/index.html) directly from the workspace root. It was referencing the raw Vite dev source `/src/main.tsx` (uncompiled TypeScript/JSX) instead of the bundled production assets.\n2. **Absolute Asset Pathing:** Vite was defaulting to root-domain paths (`/assets/...`) rather than relative paths (`./assets/...`), which caused 404 errors under the nested `/site/.../` preview route.\n3. **Missing Package Modules:** Dependencies required for building the production client had not been installed.\n\n---\n\n### 🛠️ What Was Fixed\n- **Dependencies Installed:** Installed the project dependencies cleanly.\n- **Configured Relative Base:** Configured `base: './'` in [vite.config.ts](file:///home/agent/workspace/vite.config.ts) so that bundled assets resolve relatively within any preview URL structure.\n- **Production Bundle Synchronization:** Created [index.dev.html](file:///home/agent/workspace/index.dev.html) to preserve the development template, updated build scripts in [package.json](file:///home/agent/workspace/package.json), and built production bundles directly into [index.html](file:///home/agent/workspace/index.html) and [assets/](file:///home/agent/workspace/assets).\n- **Verified Status:** Tested and confirmed HTTP 200 responses across the preview root, JavaScript bundles, and CSS stylesheets, and verified all 20 business rule compliance tests are passing in [tests/business-rules.test.ts](file:///home/agent/workspace/tests/business-rules.test.ts).\n\n---\n\n### 🌐 Live Application Preview\nYou can now open the working application preview:\n\n👉 **[https://antigravity.luch.dev/site/393e6071-faa4-45ea-9d3a-3a28e6e753cb/193b64f3837229a8489cdef6/](https://antigravity.luch.dev/site/393e6071-faa4-45ea-9d3a-3a28e6e753cb/193b64f3837229a8489cdef6/)**",
+      "status": "completed",
+      "model": "gemini-3.8-flash-high",
+      "client_type": "gemini-bridge",
+      "parent_message_id": "46e5a350-90a5-4a28-a412-ef264a4bb4e9",
+      "created_at": "2026-11-15T14:39:27.942Z",
+      "sender": "macOS",
+      "is_cancelled": false
     }
   ]
 }
