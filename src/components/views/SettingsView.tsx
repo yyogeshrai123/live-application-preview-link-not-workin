@@ -1,4 +1,4 @@
-import React from 'react';
+import React, { useState } from 'react';
 import {
   Settings,
   Shield,
@@ -11,6 +11,9 @@ import {
   HardDrive,
   CheckCircle2,
   AlertTriangle,
+  RotateCcw,
+  CheckCircle,
+  RefreshCw,
 } from 'lucide-react';
 import { storage } from '../../services/storage';
 
@@ -19,8 +22,18 @@ interface SettingsViewProps {
   onRefresh: () => void;
 }
 
-export const SettingsView: React.FC<SettingsViewProps> = () => {
+export const SettingsView: React.FC<SettingsViewProps> = ({ onRefresh }) => {
   const currentUser = storage.getCurrentUser();
+  const [showConfirmModal, setShowConfirmModal] = useState(false);
+  const [toastMsg, setToastMsg] = useState<string | null>(null);
+
+  const handleResetData = () => {
+    storage.resetToSeed();
+    setShowConfirmModal(false);
+    setToastMsg('All demo data has been reset to clean production state!');
+    setTimeout(() => setToastMsg(null), 3500);
+    onRefresh();
+  };
 
   const integrationList = [
     {
@@ -149,6 +162,70 @@ export const SettingsView: React.FC<SettingsViewProps> = () => {
               </div>
               <span className="text-[10px] font-bold bg-emerald-100 text-emerald-800 px-2 py-0.5 rounded">PARTNER</span>
             </div>
+          </div>
+        </div>
+      </div>
+
+      {/* Database & Demo State Controls */}
+      <div className="bg-white rounded-2xl border border-slate-200 shadow-xs p-6 space-y-5">
+        <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3 pb-4 border-b border-slate-100">
+          <div className="flex items-center space-x-3">
+            <div className="p-2.5 bg-blue-50 text-blue-700 rounded-xl border border-blue-200">
+              <Database className="w-5 h-5" />
+            </div>
+            <div>
+              <div className="flex items-center space-x-2">
+                <h3 className="font-extrabold text-slate-900 text-sm">Demo Data & Production State Management</h3>
+                <span className="px-2 py-0.5 rounded-full text-[10px] font-bold bg-emerald-100 text-emerald-800 border border-emerald-200">
+                  Clean State Verified
+                </span>
+              </div>
+              <p className="text-xs text-slate-500">
+                Purge mock session modifications and restore the pristine seed data
+              </p>
+            </div>
+          </div>
+
+          <button
+            onClick={() => setShowConfirmModal(true)}
+            className="flex items-center justify-center space-x-2 px-4 py-2.5 bg-rose-600 hover:bg-rose-700 text-white rounded-xl text-xs font-bold shadow-xs transition-colors shrink-0"
+          >
+            <RotateCcw className="w-4 h-4" />
+            <span>Reset Demo Data to Clean State</span>
+          </button>
+        </div>
+
+        {/* Dataset Breakdown */}
+        <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-6 gap-3 text-xs">
+          <div className="p-3 bg-slate-50 rounded-xl border border-slate-200/80">
+            <span className="text-[11px] text-slate-500 block">Active Users</span>
+            <span className="text-base font-extrabold text-slate-900">7 Accounts</span>
+            <span className="text-[10px] text-slate-400 block mt-0.5">5 distinct roles</span>
+          </div>
+          <div className="p-3 bg-slate-50 rounded-xl border border-slate-200/80">
+            <span className="text-[11px] text-slate-500 block">Lenders</span>
+            <span className="text-base font-extrabold text-slate-900">10 Institutions</span>
+            <span className="text-[10px] text-slate-400 block mt-0.5">HDFC, ICICI, etc.</span>
+          </div>
+          <div className="p-3 bg-slate-50 rounded-xl border border-slate-200/80">
+            <span className="text-[11px] text-slate-500 block">Loan Leads</span>
+            <span className="text-base font-extrabold text-slate-900">4 Sourced</span>
+            <span className="text-[10px] text-slate-400 block mt-0.5">16 fields validated</span>
+          </div>
+          <div className="p-3 bg-slate-50 rounded-xl border border-slate-200/80">
+            <span className="text-[11px] text-slate-500 block">Loan Volume</span>
+            <span className="text-base font-extrabold text-slate-900">₹35.50 Lakh</span>
+            <span className="text-[10px] text-slate-400 block mt-0.5">3 active loans</span>
+          </div>
+          <div className="p-3 bg-slate-50 rounded-xl border border-slate-200/80">
+            <span className="text-[11px] text-slate-500 block">Disbursed</span>
+            <span className="text-base font-extrabold text-slate-900">₹11.00 Lakh</span>
+            <span className="text-[10px] text-slate-400 block mt-0.5">₹2L active lock</span>
+          </div>
+          <div className="p-3 bg-slate-50 rounded-xl border border-slate-200/80">
+            <span className="text-[11px] text-slate-500 block">Customer Fees</span>
+            <span className="text-base font-extrabold text-emerald-700">₹0.00</span>
+            <span className="text-[10px] text-emerald-600 font-semibold block mt-0.5">Strict zero fee</span>
           </div>
         </div>
       </div>
