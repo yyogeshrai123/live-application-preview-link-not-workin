@@ -9,6 +9,7 @@ import {
   Lender,
   Lead,
   LeadStatus,
+  LeadChangeRequest,
   LoanApplication,
   DisbursementTransaction,
   TransferStatus,
@@ -35,6 +36,7 @@ import {
   INITIAL_ID_REQUESTS,
   INITIAL_NOTIFICATIONS,
   INITIAL_AUDIT_LOGS,
+  INITIAL_LEAD_CHANGE_REQUESTS,
 } from '../data/mockData';
 
 const STORAGE_KEYS = {
@@ -51,9 +53,10 @@ const STORAGE_KEYS = {
   ID_REQUESTS: 'aone_id_requests',
   NOTIFICATIONS: 'aone_notifications',
   AUDIT_LOGS: 'aone_audit_logs',
+  LEAD_CHANGE_REQUESTS: 'aone_lead_change_requests',
 };
 
-export const DATA_VERSION = 'v1.0.1_clean_prod_20261115';
+export const DATA_VERSION = 'v1.0.2_lead_change_requests_20261115';
 const VERSION_KEY = 'aone_data_version';
 
 // Safe JSON parser with fallback
