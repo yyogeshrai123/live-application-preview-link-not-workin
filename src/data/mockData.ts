@@ -808,3 +808,28 @@ export const INITIAL_AUDIT_LOGS: AuditLogItem[] = [
     ipAddress: '192.168.1.72',
   },
 ];
+
+export const INITIAL_LEAD_CHANGE_REQUESTS: LeadChangeRequest[] = [
+  {
+    id: 'lcr-001',
+    leadId: 'lead-003',
+    leadFileReference: 'AONE/2026/03/FL-1094',
+    customerName: 'Vijay Yadav',
+    requestType: 'EDIT',
+    status: 'PENDING_CEO',
+    requestedById: 'usr-admin-01',
+    requestedByName: 'Neha Sharma',
+    requestedByRole: 'ADMIN',
+    requestedAt: '2026-11-14T15:20:00Z',
+    reason: 'Customer updated residential address and contact number per latest electricity bill verification.',
+    previousData: {
+      customerAddress: 'House 88, Sector 15, Rohini, New Delhi 110085',
+      customerContactNumber: '+91 98333 44556',
+    },
+    proposedChanges: {
+      customerAddress: 'House 92, Pocket B, Sector 15, Rohini, New Delhi 110085',
+      customerContactNumber: '+91 98333 44550',
+      remarks: 'Verified address proof with latest power bill. Awaiting CEO approval for CRM update.',
+    },
+  },
+];
