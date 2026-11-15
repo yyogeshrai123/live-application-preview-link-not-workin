@@ -59,6 +59,29 @@ export interface IdRequest {
   updatedAt: string;
 }
 
+export type LeadRequestType = 'EDIT' | 'DELETE';
+export type LeadRequestStatus = 'PENDING_CEO' | 'APPROVED' | 'REJECTED';
+
+export interface LeadChangeRequest {
+  id: string;
+  leadId: string;
+  leadFileReference: string;
+  customerName: string;
+  requestType: LeadRequestType;
+  status: LeadRequestStatus;
+  requestedById: string;
+  requestedByName: string;
+  requestedByRole: UserRole;
+  requestedAt: string;
+  reason: string;
+  proposedChanges?: Partial<Lead>;
+  previousData?: Partial<Lead>;
+  reviewedById?: string;
+  reviewedByName?: string;
+  reviewedAt?: string;
+  ceoRemarks?: string;
+}
+
 export interface LenderContact {
   id: string;
   lenderId: string;

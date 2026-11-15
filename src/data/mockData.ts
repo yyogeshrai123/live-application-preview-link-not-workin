@@ -15,6 +15,7 @@ import {
   IdRequest,
   NotificationItem,
   AuditLogItem,
+  LeadChangeRequest,
 } from '../types';
 
 export const INITIAL_USERS: User[] = [
