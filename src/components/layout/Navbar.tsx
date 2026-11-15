@@ -8,6 +8,7 @@ import {
   Key,
   CheckCircle,
   Menu,
+  AlertTriangle,
 } from 'lucide-react';
 import { storage } from '../../services/storage';
 import { UserRole } from '../../types';
@@ -32,6 +33,8 @@ export const Navbar: React.FC<NavbarProps> = ({
   const [showNotifications, setShowNotifications] = useState(false);
   const [showRoleMenu, setShowRoleMenu] = useState(false);
   const [showCredentials, setShowCredentials] = useState(false);
+  const [showResetModal, setShowResetModal] = useState(false);
+  const [toastMessage, setToastMessage] = useState<string | null>(null);
 
   const handleRoleChange = (role: UserRole) => {
     storage.setCurrentUser(role);
@@ -39,11 +42,12 @@ export const Navbar: React.FC<NavbarProps> = ({
     onRefresh();
   };
 
-  const handleResetData = () => {
-    if (window.confirm('Reset all demo data back to clean production state?')) {
-      storage.resetToSeed();
-      onRefresh();
-    }
+  const handleConfirmReset = () => {
+    storage.resetToSeed();
+    setShowResetModal(false);
+    setToastMessage('All demo data reset to clean production state!');
+    setTimeout(() => setToastMessage(null), 3500);
+    onRefresh();
   };
 
   const roles: { role: UserRole; label: string; desc: string }[] = [

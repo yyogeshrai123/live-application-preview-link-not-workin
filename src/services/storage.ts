@@ -93,6 +93,19 @@ class StorageEngine {
   private auditLogs: AuditLogItem[];
 
   constructor() {
+    if (typeof window !== 'undefined') {
+      try {
+        const storedVersion = localStorage.getItem(VERSION_KEY);
+        if (storedVersion !== DATA_VERSION) {
+          // Clean reset to pristine seed data on version mismatch
+          Object.values(STORAGE_KEYS).forEach((k) => localStorage.removeItem(k));
+          localStorage.setItem(VERSION_KEY, DATA_VERSION);
+        }
+      } catch (e) {
+        console.warn('Error verifying storage version:', e);
+      }
+    }
+
     this.users = loadFromStorage(STORAGE_KEYS.USERS, INITIAL_USERS);
     this.currentUser = loadFromStorage(STORAGE_KEYS.CURRENT_USER, INITIAL_USERS[0]); // default CEO
     this.lenders = loadFromStorage(STORAGE_KEYS.LENDERS, INITIAL_LENDERS);
@@ -109,9 +122,11 @@ class StorageEngine {
   }
 
   // --- Reset to Initial Seed Data ---
-  public resetToSeed(): void {
+  public resetToSeed(preserveRole: boolean = false): void {
+    const roleToKeep = preserveRole && this.currentUser ? this.currentUser.role : 'CEO';
     this.users = JSON.parse(JSON.stringify(INITIAL_USERS));
-    this.currentUser = JSON.parse(JSON.stringify(INITIAL_USERS[0])); // default CEO
+    const matched = this.users.find((u) => u.role === roleToKeep) || this.users[0];
+    this.currentUser = JSON.parse(JSON.stringify(matched));
     this.lenders = JSON.parse(JSON.stringify(INITIAL_LENDERS));
     this.leads = JSON.parse(JSON.stringify(INITIAL_LEADS));
     this.loans = JSON.parse(JSON.stringify(INITIAL_LOANS));
@@ -128,6 +143,13 @@ class StorageEngine {
   }
 
   private persistAll(): void {
+    if (typeof window !== 'undefined') {
+      try {
+        localStorage.setItem(VERSION_KEY, DATA_VERSION);
+      } catch (e) {
+        console.warn('Error saving data version:', e);
+      }
+    }
     saveToStorage(STORAGE_KEYS.USERS, this.users);
     saveToStorage(STORAGE_KEYS.CURRENT_USER, this.currentUser);
     saveToStorage(STORAGE_KEYS.LENDERS, this.lenders);
