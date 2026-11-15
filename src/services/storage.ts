@@ -53,6 +53,9 @@ const STORAGE_KEYS = {
   AUDIT_LOGS: 'aone_audit_logs',
 };
 
+export const DATA_VERSION = 'v1.0.1_clean_prod_20261115';
+const VERSION_KEY = 'aone_data_version';
+
 // Safe JSON parser with fallback
 function loadFromStorage<T>(key: string, fallback: T): T {
   if (typeof window === 'undefined') return fallback;
