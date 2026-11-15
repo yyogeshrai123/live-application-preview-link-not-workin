@@ -201,6 +201,146 @@ export const LeadsView: React.FC<LeadsViewProps> = ({ setActiveTab: _setActiveTa
     }
   };
 
+  // Open Edit Request Modal
+  const openEditRequestModal = (lead: Lead) => {
+    setEditTargetLead(lead);
+    setEditFormData({
+      customerName: lead.customerName,
+      fatherName: lead.fatherName,
+      coApplicantName: lead.coApplicantName,
+      customerContactNumber: lead.customerContactNumber,
+      coApplicantContactNumber: lead.coApplicantContactNumber,
+      customerAddress: lead.customerAddress,
+      vehicleNumber: lead.vehicleNumber,
+      vehicleMake: lead.vehicleMake,
+      vehicleModel: lead.vehicleModel,
+      lenderId: lead.lenderId,
+      asmName: lead.asmName,
+      asmContactNumber: lead.asmContactNumber,
+      bankName: lead.bankAccount?.bankName || '',
+      accountNumber: lead.bankAccount?.accountNumber || '',
+      ifscCode: lead.bankAccount?.ifscCode || '',
+      remarks: lead.remarks || '',
+    });
+    setEditReason('');
+    setEditError('');
+    setShowEditModal(true);
+  };
+
+  const handleEditLenderChange = (lenderId: string) => {
+    const lender = activeLenders.find((l) => l.id === lenderId);
+    const primaryContact = lender?.contacts[0];
+    setEditFormData((prev: any) => ({
+      ...prev,
+      lenderId,
+      asmName: primaryContact?.asmName || 'Regional ASM',
+      asmContactNumber: primaryContact?.asmContactNumber || '+91 98765 00000',
+    }));
+  };
+
+  const handleSubmitEditRequest = (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!editTargetLead) return;
+    setEditError('');
+
+    if (!editReason.trim()) {
+      setEditError('Reason for requesting lead edit is mandatory.');
+      return;
+    }
+
+    try {
+      const lender = activeLenders.find((l) => l.id === editFormData.lenderId);
+      const proposedChanges: Partial<Lead> = {
+        customerName: editFormData.customerName,
+        fatherName: editFormData.fatherName,
+        coApplicantName: editFormData.coApplicantName,
+        customerContactNumber: editFormData.customerContactNumber,
+        coApplicantContactNumber: editFormData.coApplicantContactNumber,
+        customerAddress: editFormData.customerAddress,
+        vehicleNumber: editFormData.vehicleNumber,
+        vehicleMake: editFormData.vehicleMake,
+        vehicleModel: editFormData.vehicleModel,
+        lenderId: editFormData.lenderId,
+        lenderName: lender?.name || editTargetLead.lenderName,
+        asmName: editFormData.asmName,
+        asmContactNumber: editFormData.asmContactNumber,
+        bankAccount: {
+          ...editTargetLead.bankAccount,
+          bankName: editFormData.bankName,
+          accountNumber: editFormData.accountNumber,
+          maskedAccountNumber: '••••' + editFormData.accountNumber.slice(-4),
+          ifscCode: editFormData.ifscCode,
+        },
+        remarks: editFormData.remarks,
+      };
+
+      storage.submitLeadEditRequest(editTargetLead.id, proposedChanges, editReason);
+      setShowEditModal(false);
+      setToastMessage('Lead edit request submitted to CEO for review.');
+      setTimeout(() => setToastMessage(null), 4000);
+      onRefresh();
+    } catch (err: any) {
+      setEditError(err.message || 'Failed to submit edit request.');
+    }
+  };
+
+  // Open Delete Request Modal
+  const openDeleteRequestModal = (lead: Lead) => {
+    setDeleteTargetLead(lead);
+    setDeleteReason('');
+    setDeleteError('');
+    setShowDeleteModal(true);
+  };
+
+  const handleSubmitDeleteRequest = (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!deleteTargetLead) return;
+    setDeleteError('');
+
+    if (!deleteReason.trim()) {
+      setDeleteError('Reason for requesting lead deletion is mandatory.');
+      return;
+    }
+
+    try {
+      storage.submitLeadDeleteRequest(deleteTargetLead.id, deleteReason);
+      setShowDeleteModal(false);
+      setToastMessage('Lead deletion request submitted to CEO for review.');
+      setTimeout(() => setToastMessage(null), 4000);
+      onRefresh();
+    } catch (err: any) {
+      setDeleteError(err.message || 'Failed to submit deletion request.');
+    }
+  };
+
+  // Open CEO Review Modal
+  const openReviewModal = (req: LeadChangeRequest, action: 'APPROVE' | 'REJECT') => {
+    setReviewTargetRequest(req);
+    setReviewAction(action);
+    setCeoRemarksInput('');
+    setReviewError('');
+    setShowReviewModal(true);
+  };
+
+  const handleExecuteReview = () => {
+    if (!reviewTargetRequest) return;
+    setReviewError('');
+    try {
+      if (reviewAction === 'APPROVE') {
+        storage.approveLeadChangeRequest(reviewTargetRequest.id, ceoRemarksInput);
+        setToastMessage(`Lead ${reviewTargetRequest.requestType.toLowerCase()} request approved by CEO.`);
+      } else {
+        storage.rejectLeadChangeRequest(reviewTargetRequest.id, ceoRemarksInput);
+        setToastMessage(`Lead ${reviewTargetRequest.requestType.toLowerCase()} request rejected.`);
+      }
+      setShowReviewModal(false);
+      setTimeout(() => setToastMessage(null), 4000);
+      onRefresh();
+    } catch (err: any) {
+      setReviewError(err.message || 'Failed to process request.');
+    }
+  };
+
   // Filter Leads
   const filteredLeads = leads.filter((lead) => {
     const matchesSearch =
