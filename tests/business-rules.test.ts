@@ -435,4 +435,84 @@ describe('A ONE FINANCIAL SERVICES – Automated Business Rules & Compliance Tes
       });
     }).toThrow(/exceeds available balance/i);
   });
+
+  // TEST 21: Lead Edit Request & CEO Approval Workflow
+  it('21. Lead Edit Request workflow: Admin can request lead edit, strictly pending CEO approval, and only CEO can approve', () => {
+    // 1. Admin submits edit request
+    storage.setCurrentUser('ADMIN');
+    const leads = storage.getLeads();
+    const targetLead = leads[0];
+
+    const editReq = storage.submitLeadEditRequest(
+      targetLead.id,
+      { customerAddress: 'New Verified Address, Bandra West, Mumbai 400050' },
+      'Customer submitted updated electricity bill'
+    );
+    expect(editReq.status).toBe('PENDING_CEO');
+    expect(editReq.requestType).toBe('EDIT');
+    expect(editReq.requestedByRole).toBe('ADMIN');
+
+    // 2. Admin cannot approve the request
+    expect(() => {
+      storage.approveLeadChangeRequest(editReq.id, 'Admin attempt');
+    }).toThrow(/Only CEO has the authority to approve/i);
+
+    // 3. Officer/Manager cannot approve either
+    storage.setCurrentUser('OFFICER');
+    expect(() => {
+      storage.approveLeadChangeRequest(editReq.id, 'Officer attempt');
+    }).toThrow(/Only CEO has the authority to approve/i);
+
+    // 4. CEO approves the request
+    storage.setCurrentUser('CEO');
+    const approved = storage.approveLeadChangeRequest(editReq.id, 'Verified and approved by CEO');
+    expect(approved.status).toBe('APPROVED');
+    expect(approved.ceoRemarks).toBe('Verified and approved by CEO');
+
+    // 5. Verify lead has been updated
+    const updatedLead = storage.getLeads().find((l) => l.id === targetLead.id);
+    expect(updatedLead?.customerAddress).toBe('New Verified Address, Bandra West, Mumbai 400050');
+  });
+
+  // TEST 22: Lead Deletion Request & CEO Approval Workflow
+  it('22. Lead Deletion Request workflow: Admin can request deletion, CEO can reject or approve, file deleted only post CEO approval', () => {
+    storage.setCurrentUser('ADMIN');
+    const initialCount = storage.getLeads().length;
+    const leadToDelete = storage.getLeads()[1]; // Anita Desai
+
+    // 1. Admin submits deletion request
+    const deleteReq = storage.submitLeadDeleteRequest(
+      leadToDelete.id,
+      'Customer cancelled purchase and loan application'
+    );
+    expect(deleteReq.status).toBe('PENDING_CEO');
+    expect(deleteReq.requestType).toBe('DELETE');
+
+    // Lead still exists before CEO approval
+    expect(storage.getLeads().length).toBe(initialCount);
+
+    // 2. CEO rejects the request first
+    storage.setCurrentUser('CEO');
+    const rejected = storage.rejectLeadChangeRequest(deleteReq.id, 'File active in underwriting');
+    expect(rejected.status).toBe('REJECTED');
+    expect(storage.getLeads().length).toBe(initialCount); // Still not deleted
+
+    // 3. Admin submits a second deletion request
+    storage.setCurrentUser('ADMIN');
+    const deleteReq2 = storage.submitLeadDeleteRequest(
+      leadToDelete.id,
+      'Confirmed customer cancellation with signed withdrawal letter'
+    );
+    expect(deleteReq2.status).toBe('PENDING_CEO');
+
+    // 4. CEO approves deletion
+    storage.setCurrentUser('CEO');
+    const approvedDelete = storage.approveLeadChangeRequest(deleteReq2.id, 'Approved for removal');
+    expect(approvedDelete.status).toBe('APPROVED');
+
+    // 5. Lead is now permanently deleted
+    const leadsAfter = storage.getLeads();
+    expect(leadsAfter.length).toBe(initialCount - 1);
+    expect(leadsAfter.find((l) => l.id === leadToDelete.id)).toBeUndefined();
+  });
 });
