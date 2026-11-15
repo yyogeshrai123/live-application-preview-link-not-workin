@@ -107,19 +107,19 @@ class StorageEngine {
 
   // --- Reset to Initial Seed Data ---
   public resetToSeed(): void {
-    this.users = [...INITIAL_USERS];
-    this.currentUser = INITIAL_USERS[0];
-    this.lenders = [...INITIAL_LENDERS];
-    this.leads = [...INITIAL_LEADS];
-    this.loans = [...INITIAL_LOANS];
-    this.disbursements = [...INITIAL_DISBURSEMENTS];
-    this.locks = [...INITIAL_LOCKS];
-    this.lenderPayments = [...INITIAL_LENDER_PAYMENTS];
-    this.partnerRules = [...INITIAL_PARTNER_RULES];
-    this.partnerPayouts = [...INITIAL_PARTNER_PAYOUTS];
-    this.idRequests = [...INITIAL_ID_REQUESTS];
-    this.notifications = [...INITIAL_NOTIFICATIONS];
-    this.auditLogs = [...INITIAL_AUDIT_LOGS];
+    this.users = JSON.parse(JSON.stringify(INITIAL_USERS));
+    this.currentUser = JSON.parse(JSON.stringify(INITIAL_USERS[0])); // default CEO
+    this.lenders = JSON.parse(JSON.stringify(INITIAL_LENDERS));
+    this.leads = JSON.parse(JSON.stringify(INITIAL_LEADS));
+    this.loans = JSON.parse(JSON.stringify(INITIAL_LOANS));
+    this.disbursements = JSON.parse(JSON.stringify(INITIAL_DISBURSEMENTS));
+    this.locks = JSON.parse(JSON.stringify(INITIAL_LOCKS));
+    this.lenderPayments = JSON.parse(JSON.stringify(INITIAL_LENDER_PAYMENTS));
+    this.partnerRules = JSON.parse(JSON.stringify(INITIAL_PARTNER_RULES));
+    this.partnerPayouts = JSON.parse(JSON.stringify(INITIAL_PARTNER_PAYOUTS));
+    this.idRequests = JSON.parse(JSON.stringify(INITIAL_ID_REQUESTS));
+    this.notifications = JSON.parse(JSON.stringify(INITIAL_NOTIFICATIONS));
+    this.auditLogs = JSON.parse(JSON.stringify(INITIAL_AUDIT_LOGS));
 
     this.persistAll();
   }
