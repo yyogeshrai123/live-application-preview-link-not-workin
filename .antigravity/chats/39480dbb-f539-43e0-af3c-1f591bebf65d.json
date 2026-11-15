@@ -88,6 +88,18 @@
       "created_at": "2026-11-15T14:52:33.202Z",
       "sender": "ios",
       "is_cancelled": false
+    },
+    {
+      "id": "11088abd-a37c-4bdc-98c6-9d9b28e636c6",
+      "role": "agent",
+      "content": "All demo data has been reset back to the **clean production state**.\n\n### 🔄 What Was Done\n1. **Automated Storage Version Migration:**\n   - In [src/services/storage.ts](file:///home/agent/workspace/src/services/storage.ts), added a version key (`DATA_VERSION = 'v1.0.1_clean_prod_20261115'`). When the preview is loaded on any device or browser, any outdated or modified `localStorage` from previous sessions is automatically purged and initialized with the clean production dataset.\n2. **Clean Production Seed Dataset:**\n   - **7 Verified Demo Users:** CEO (Rajesh Singhania), Admin (Neha Sharma), Sales Team Manager (Vikram Malhotra), 2 Sales Officers (Amit Verma, Priya Patel), 2 Channel Partners (Sunita Joshi, Rahul Gupta). Universal password: `Password@123`.\n   - **10 Institutional Lenders:** Active lending partners (HDFC, ICICI, Axis, SBI, Kotak Mahindra, IDFC FIRST, Bank of Baroda, Tata Capital, Mahindra Finance, Cholamandalam Finance) with authentic ASM contact details; 1 inactive lender.\n   - **4 Loan Sourcing Leads:** All 16 mandatory lead fields validated, proper Direct vs. Channel Partner attribution, and automated Officer assignment.\n   - **3 Calibrated Loans:** Total volume ₹35,50,000 with exact `NUMERIC(18,2)` mathematical integrity:\n     - Total Disbursed: ₹11,00,000 (successful transfers).\n     - Failed Transfer: ₹1,50,000 correctly excluded from disbursed balance.\n     - Active Hypothecation Lock: ₹2,00,000 (₹3,00,000 locked - ₹1,00,000 released).\n     - Net Available Balance: ₹22,50,000 (preventing over-disbursement).\n   - **Lender & Partner Payouts:** ₹21,250 DSA commission received from ICICI Bank; ₹17,000 partner payout calculated via snapshot % (₹10,000 paid, ₹7,000 pending).\n   - **2 ID Onboarding Requests:** Kavita Rawat (Pending Admin Review) and Siddharth Roy (Pending CEO Final Approval).\n   - **Zero Customer Fees:** Absolute rule enforced (`₹0.00` customer fees).\n3. **Interactive Reset Controls:**\n   - Added a **Demo Data & Production State Management** section in [SettingsView.tsx](file:///home/agent/workspace/src/components/views/SettingsView.tsx) and updated the reset trigger in [Navbar.tsx](file:///home/agent/workspace/src/components/layout/Navbar.tsx) with a confirmation modal and visual toast notifications.\n4. **Backend Alignment:**\n   - Added `/api/reset` in [server/index.js](file:///home/agent/workspace/server/index.js).\n5. **Verification & Tests:**\n   - Verified that all 20 business rule compliance tests in [tests/business-rules.test.ts](file:///home/agent/workspace/tests/business-rules.test.ts) pass (20/20).\n   - Built production bundles and verified HTTP 200 responses for the preview root, JS, and CSS.\n\n---\n\n### 🌐 Live Application Preview\nYou can view the clean production system here:\n\n👉 **[https://antigravity.luch.dev/site/393e6071-faa4-45ea-9d3a-3a28e6e753cb/193b64f3837229a8489cdef6/](https://antigravity.luch.dev/site/393e6071-faa4-45ea-9d3a-3a28e6e753cb/193b64f3837229a8489cdef6/)**",
+      "status": "completed",
+      "model": "gemini-3.8-flash-high",
+      "client_type": "gemini-bridge",
+      "parent_message_id": "d661c852-2d79-48a5-9c87-550f5f446157",
+      "created_at": "2026-11-15T14:57:58.516Z",
+      "sender": "macOS",
+      "is_cancelled": false
     }
   ]
 }
