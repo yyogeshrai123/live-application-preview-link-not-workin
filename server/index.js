@@ -226,7 +226,58 @@ app.post('/api/reset', authenticateToken, (req, res) => {
   state.idRequests = [];
   state.auditLogs = [];
   state.notifications = [];
+  state.leadChangeRequests = [];
   res.json({ success: true, message: 'Server state reset to clean production baseline' });
+});
+
+// --- Lead Change Requests (Admin requests, CEO approves) ---
+app.post('/api/leads/:id/request-change', authenticateToken, requireRoles('ADMIN', 'CEO'), (req, res) => {
+  const { requestType, reason, proposedChanges } = req.body;
+  if (!reason) return res.status(400).json({ error: 'Reason is mandatory.' });
+  const lead = state.leads.find((l) => l.id === req.params.id);
+  if (!lead) return res.status(404).json({ error: 'Lead not found.' });
+
+  const request = {
+    id: `lcr-${Date.now()}`,
+    leadId: lead.id,
+    leadFileReference: lead.fileReference,
+    customerName: lead.customerName,
+    requestType,
+    status: 'PENDING_CEO',
+    requestedById: req.user.id,
+    requestedByName: req.user.fullName,
+    requestedByRole: req.user.role,
+    requestedAt: new Date().toISOString(),
+    reason,
+    proposedChanges,
+  };
+  state.leadChangeRequests = state.leadChangeRequests || [];
+  state.leadChangeRequests.unshift(request);
+  res.status(201).json(request);
+});
+
+app.post('/api/leads/requests/:id/review', authenticateToken, requireRoles('CEO'), (req, res) => {
+  const { action, remarks } = req.body;
+  state.leadChangeRequests = state.leadChangeRequests || [];
+  const reqItem = state.leadChangeRequests.find((r) => r.id === req.params.id);
+  if (!reqItem) return res.status(404).json({ error: 'Request not found.' });
+
+  if (action === 'APPROVE') {
+    if (reqItem.requestType === 'EDIT') {
+      const lead = state.leads.find((l) => l.id === reqItem.leadId);
+      if (lead && reqItem.proposedChanges) Object.assign(lead, reqItem.proposedChanges);
+    } else if (reqItem.requestType === 'DELETE') {
+      state.leads = state.leads.filter((l) => l.id !== reqItem.leadId);
+    }
+    reqItem.status = 'APPROVED';
+  } else {
+    reqItem.status = 'REJECTED';
+  }
+  reqItem.reviewedById = req.user.id;
+  reqItem.reviewedByName = req.user.fullName;
+  reqItem.reviewedAt = new Date().toISOString();
+  reqItem.ceoRemarks = remarks;
+  res.json(reqItem);
 });
 
 // Start Express server if run directly
