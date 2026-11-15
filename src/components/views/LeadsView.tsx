@@ -16,9 +16,17 @@ import {
   Eye,
   Edit,
   ArrowRight,
+  Trash2,
+  Clock,
+  Check,
+  CheckCircle2,
+  FileDiff,
+  AlertCircle,
+  ThumbsUp,
+  ThumbsDown,
 } from 'lucide-react';
 import { storage } from '../../services/storage';
-import { Lead, LeadStatus } from '../../types';
+import { Lead, LeadStatus, LeadChangeRequest } from '../../types';
 import { StatusBadge } from '../common/StatusBadge';
 
 interface LeadsViewProps {
@@ -33,6 +41,12 @@ export const LeadsView: React.FC<LeadsViewProps> = ({ setActiveTab: _setActiveTa
   const allUsers = storage.getUsers();
   const officers = allUsers.filter((u) => u.role === 'OFFICER' && u.isActive);
   const partners = allUsers.filter((u) => u.role === 'PARTNER' && u.isActive);
+  const changeRequests = storage.getLeadChangeRequests();
+  const pendingRequestsCount = changeRequests.filter((r) => r.status === 'PENDING_CEO').length;
+
+  // Sub Tab for CEO & Admin
+  const [activeSubTab, setActiveSubTab] = useState<'leads' | 'requests'>('leads');
+  const [requestFilterStatus, setRequestFilterStatus] = useState<string>('ALL');
 
   // Filters State
   const [searchTerm, setSearchTerm] = useState('');
@@ -46,6 +60,29 @@ export const LeadsView: React.FC<LeadsViewProps> = ({ setActiveTab: _setActiveTa
   const [showAssignModal, setShowAssignModal] = useState(false);
   const [assignTargetOfficer, setAssignTargetOfficer] = useState('');
   const [assignNotes, setAssignNotes] = useState('');
+
+  // Edit Request State (Admin requests -> CEO approves)
+  const [showEditModal, setShowEditModal] = useState(false);
+  const [editTargetLead, setEditTargetLead] = useState<Lead | null>(null);
+  const [editFormData, setEditFormData] = useState<any>({});
+  const [editReason, setEditReason] = useState('');
+  const [editError, setEditError] = useState('');
+
+  // Delete Request State (Admin requests -> CEO approves)
+  const [showDeleteModal, setShowDeleteModal] = useState(false);
+  const [deleteTargetLead, setDeleteTargetLead] = useState<Lead | null>(null);
+  const [deleteReason, setDeleteReason] = useState('');
+  const [deleteError, setDeleteError] = useState('');
+
+  // CEO Review Modal State
+  const [showReviewModal, setShowReviewModal] = useState(false);
+  const [reviewTargetRequest, setReviewTargetRequest] = useState<LeadChangeRequest | null>(null);
+  const [reviewAction, setReviewAction] = useState<'APPROVE' | 'REJECT'>('APPROVE');
+  const [ceoRemarksInput, setCeoRemarksInput] = useState('');
+  const [reviewError, setReviewError] = useState('');
+
+  // Toast feedback
+  const [toastMessage, setToastMessage] = useState<string | null>(null);
 
   // Add Lead Form State (All 16 Mandatory fields + optional Channel Partner)
   const [formData, setFormData] = useState({

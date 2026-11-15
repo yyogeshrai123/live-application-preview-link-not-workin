@@ -94,6 +94,7 @@ class StorageEngine {
   private idRequests: IdRequest[];
   private notifications: NotificationItem[];
   private auditLogs: AuditLogItem[];
+  private leadChangeRequests: LeadChangeRequest[];
 
   constructor() {
     if (typeof window !== 'undefined') {
@@ -122,6 +123,7 @@ class StorageEngine {
     this.idRequests = loadFromStorage(STORAGE_KEYS.ID_REQUESTS, INITIAL_ID_REQUESTS);
     this.notifications = loadFromStorage(STORAGE_KEYS.NOTIFICATIONS, INITIAL_NOTIFICATIONS);
     this.auditLogs = loadFromStorage(STORAGE_KEYS.AUDIT_LOGS, INITIAL_AUDIT_LOGS);
+    this.leadChangeRequests = loadFromStorage(STORAGE_KEYS.LEAD_CHANGE_REQUESTS, INITIAL_LEAD_CHANGE_REQUESTS);
   }
 
   // --- Reset to Initial Seed Data ---
@@ -141,6 +143,7 @@ class StorageEngine {
     this.idRequests = JSON.parse(JSON.stringify(INITIAL_ID_REQUESTS));
     this.notifications = JSON.parse(JSON.stringify(INITIAL_NOTIFICATIONS));
     this.auditLogs = JSON.parse(JSON.stringify(INITIAL_AUDIT_LOGS));
+    this.leadChangeRequests = JSON.parse(JSON.stringify(INITIAL_LEAD_CHANGE_REQUESTS));
 
     this.persistAll();
   }
@@ -166,6 +169,7 @@ class StorageEngine {
     saveToStorage(STORAGE_KEYS.ID_REQUESTS, this.idRequests);
     saveToStorage(STORAGE_KEYS.NOTIFICATIONS, this.notifications);
     saveToStorage(STORAGE_KEYS.AUDIT_LOGS, this.auditLogs);
+    saveToStorage(STORAGE_KEYS.LEAD_CHANGE_REQUESTS, this.leadChangeRequests);
   }
 
   // --- Audit Logging (Immutable) ---
@@ -485,6 +489,265 @@ class StorageEngine {
     );
 
     return lead;
+  }
+
+  // --- Lead Change Requests (Edit/Delete Approvals: Admin Requests, CEO Approves) ---
+  public getLeadChangeRequests(): LeadChangeRequest[] {
+    const user = this.currentUser;
+    if (user.role === 'CEO' || user.role === 'ADMIN') {
+      return [...this.leadChangeRequests];
+    }
+    return this.leadChangeRequests.filter((r) => r.requestedById === user.id);
+  }
+
+  public getPendingChangeRequestForLead(leadId: string): LeadChangeRequest | undefined {
+    return this.leadChangeRequests.find((r) => r.leadId === leadId && r.status === 'PENDING_CEO');
+  }
+
+  public submitLeadEditRequest(leadId: string, proposedChanges: Partial<Lead>, reason: string): LeadChangeRequest {
+    const user = this.currentUser;
+    if (user.role !== 'ADMIN' && user.role !== 'CEO') {
+      throw new Error('Only Admin or CEO can request lead edits.');
+    }
+    if (!reason || !reason.trim()) {
+      throw new Error('Reason for requesting lead edit is mandatory.');
+    }
+
+    const lead = this.leads.find((l) => l.id === leadId);
+    if (!lead) throw new Error('Lead not found.');
+
+    const pending = this.getPendingChangeRequestForLead(leadId);
+    if (pending) {
+      throw new Error(`A change request (${pending.requestType}) is already pending CEO review for this lead.`);
+    }
+
+    const previousData: Partial<Lead> = {};
+    for (const key of Object.keys(proposedChanges) as (keyof Lead)[]) {
+      (previousData as any)[key] = lead[key];
+    }
+
+    const newReq: LeadChangeRequest = {
+      id: `lcr-${Date.now()}`,
+      leadId,
+      leadFileReference: lead.fileReference,
+      customerName: lead.customerName,
+      requestType: 'EDIT',
+      status: 'PENDING_CEO',
+      requestedById: user.id,
+      requestedByName: user.fullName,
+      requestedByRole: user.role,
+      requestedAt: new Date().toISOString(),
+      reason: reason.trim(),
+      proposedChanges,
+      previousData,
+    };
+
+    this.leadChangeRequests.unshift(newReq);
+    saveToStorage(STORAGE_KEYS.LEAD_CHANGE_REQUESTS, this.leadChangeRequests);
+
+    this.logAudit(
+      'LEAD_EDIT_REQUESTED',
+      'LeadChangeRequest',
+      newReq.id,
+      undefined,
+      `${user.role} ${user.fullName} requested edit for ${lead.customerName} (${lead.fileReference}). Reason: ${reason}`
+    );
+
+    this.createNotification(
+      'CEO',
+      'Lead Edit Request Awaiting Approval',
+      `${user.fullName} (${user.role}) submitted an edit request for Lead ${lead.customerName}. Requires CEO review and approval.`,
+      'ALERT',
+      'leads'
+    );
+
+    return newReq;
+  }
+
+  public submitLeadDeleteRequest(leadId: string, reason: string): LeadChangeRequest {
+    const user = this.currentUser;
+    if (user.role !== 'ADMIN' && user.role !== 'CEO') {
+      throw new Error('Only Admin or CEO can request lead deletion.');
+    }
+    if (!reason || !reason.trim()) {
+      throw new Error('Reason for requesting lead deletion is mandatory.');
+    }
+
+    const lead = this.leads.find((l) => l.id === leadId);
+    if (!lead) throw new Error('Lead not found.');
+
+    const pending = this.getPendingChangeRequestForLead(leadId);
+    if (pending) {
+      throw new Error(`A change request (${pending.requestType}) is already pending CEO review for this lead.`);
+    }
+
+    const newReq: LeadChangeRequest = {
+      id: `lcr-${Date.now()}`,
+      leadId,
+      leadFileReference: lead.fileReference,
+      customerName: lead.customerName,
+      requestType: 'DELETE',
+      status: 'PENDING_CEO',
+      requestedById: user.id,
+      requestedByName: user.fullName,
+      requestedByRole: user.role,
+      requestedAt: new Date().toISOString(),
+      reason: reason.trim(),
+      previousData: {
+        customerName: lead.customerName,
+        vehicleNumber: lead.vehicleNumber,
+        lenderName: lead.lenderName,
+        customerAddress: lead.customerAddress,
+      },
+    };
+
+    this.leadChangeRequests.unshift(newReq);
+    saveToStorage(STORAGE_KEYS.LEAD_CHANGE_REQUESTS, this.leadChangeRequests);
+
+    this.logAudit(
+      'LEAD_DELETE_REQUESTED',
+      'LeadChangeRequest',
+      newReq.id,
+      undefined,
+      `${user.role} ${user.fullName} requested deletion of Lead ${lead.customerName} (${lead.fileReference}). Reason: ${reason}`
+    );
+
+    this.createNotification(
+      'CEO',
+      'Lead Deletion Request Awaiting Approval',
+      `${user.fullName} (${user.role}) requested DELETION of Lead ${lead.customerName} (${lead.fileReference}). Requires CEO review and approval.`,
+      'ALERT',
+      'leads'
+    );
+
+    return newReq;
+  }
+
+  public approveLeadChangeRequest(requestId: string, remarks?: string): LeadChangeRequest {
+    const user = this.currentUser;
+    if (user.role !== 'CEO') {
+      throw new Error('Only CEO has the authority to approve lead edit or delete requests.');
+    }
+
+    const req = this.leadChangeRequests.find((r) => r.id === requestId);
+    if (!req) throw new Error('Lead change request not found.');
+    if (req.status !== 'PENDING_CEO') {
+      throw new Error(`Request has already been processed with status: ${req.status}`);
+    }
+
+    if (req.requestType === 'EDIT') {
+      const lead = this.leads.find((l) => l.id === req.leadId);
+      if (!lead) throw new Error('Target lead not found for update.');
+
+      if (req.proposedChanges) {
+        Object.assign(lead, req.proposedChanges);
+        lead.updatedAt = new Date().toISOString();
+
+        // Update associated loan customer name if changed
+        if (req.proposedChanges.customerName) {
+          const associatedLoans = this.loans.filter((ln) => ln.leadId === lead.id);
+          associatedLoans.forEach((ln) => {
+            ln.customerName = req.proposedChanges!.customerName!;
+          });
+          saveToStorage(STORAGE_KEYS.LOANS, this.loans);
+        }
+      }
+
+      saveToStorage(STORAGE_KEYS.LEADS, this.leads);
+
+      this.logAudit(
+        'LEAD_EDIT_APPROVED',
+        'Lead',
+        lead.id,
+        undefined,
+        `CEO ${user.fullName} approved edit request. Remarks: ${remarks || 'Approved'}`
+      );
+
+      this.createNotification(
+        'ADMIN',
+        'Lead Edit Request Approved',
+        `CEO ${user.fullName} approved the edit request for Lead ${lead.customerName} (${lead.fileReference}). Changes are now live.`,
+        'SUCCESS',
+        'leads'
+      );
+    } else if (req.requestType === 'DELETE') {
+      const leadIndex = this.leads.findIndex((l) => l.id === req.leadId);
+      if (leadIndex !== -1) {
+        this.leads.splice(leadIndex, 1);
+        saveToStorage(STORAGE_KEYS.LEADS, this.leads);
+      }
+
+      // Also clean up associated loan if any
+      const loanIndex = this.loans.findIndex((ln) => ln.leadId === req.leadId);
+      if (loanIndex !== -1) {
+        this.loans.splice(loanIndex, 1);
+        saveToStorage(STORAGE_KEYS.LOANS, this.loans);
+      }
+
+      this.logAudit(
+        'LEAD_DELETE_APPROVED',
+        'Lead',
+        req.leadId,
+        `Lead: ${req.customerName} (${req.leadFileReference})`,
+        `CEO ${user.fullName} approved deletion. Lead permanently removed. Remarks: ${remarks || 'Approved'}`
+      );
+
+      this.createNotification(
+        'ADMIN',
+        'Lead Deletion Request Approved',
+        `CEO ${user.fullName} approved deletion of Lead ${req.customerName} (${req.leadFileReference}). File has been removed.`,
+        'SUCCESS',
+        'leads'
+      );
+    }
+
+    req.status = 'APPROVED';
+    req.reviewedById = user.id;
+    req.reviewedByName = user.fullName;
+    req.reviewedAt = new Date().toISOString();
+    req.ceoRemarks = remarks;
+
+    saveToStorage(STORAGE_KEYS.LEAD_CHANGE_REQUESTS, this.leadChangeRequests);
+    return req;
+  }
+
+  public rejectLeadChangeRequest(requestId: string, remarks?: string): LeadChangeRequest {
+    const user = this.currentUser;
+    if (user.role !== 'CEO') {
+      throw new Error('Only CEO has the authority to reject lead edit or delete requests.');
+    }
+
+    const req = this.leadChangeRequests.find((r) => r.id === requestId);
+    if (!req) throw new Error('Lead change request not found.');
+    if (req.status !== 'PENDING_CEO') {
+      throw new Error(`Request has already been processed with status: ${req.status}`);
+    }
+
+    req.status = 'REJECTED';
+    req.reviewedById = user.id;
+    req.reviewedByName = user.fullName;
+    req.reviewedAt = new Date().toISOString();
+    req.ceoRemarks = remarks;
+
+    saveToStorage(STORAGE_KEYS.LEAD_CHANGE_REQUESTS, this.leadChangeRequests);
+
+    this.logAudit(
+      'LEAD_CHANGE_REQUEST_REJECTED',
+      'LeadChangeRequest',
+      req.id,
+      'PENDING_CEO',
+      `CEO ${user.fullName} rejected ${req.requestType} request for ${req.customerName}. Remarks: ${remarks || 'None'}`
+    );
+
+    this.createNotification(
+      'ADMIN',
+      `Lead ${req.requestType === 'EDIT' ? 'Edit' : 'Deletion'} Request Rejected`,
+      `CEO ${user.fullName} rejected the ${req.requestType} request for Lead ${req.customerName}. Reason: ${remarks || 'Not approved by executive'}.`,
+      'WARNING',
+      'leads'
+    );
+
+    return req;
   }
 
   // --- Loan Applications Management ---
