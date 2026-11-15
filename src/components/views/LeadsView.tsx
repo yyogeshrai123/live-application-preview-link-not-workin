@@ -1427,6 +1427,415 @@ export const LeadsView: React.FC<LeadsViewProps> = ({ setActiveTab: _setActiveTa
           </div>
         </div>
       )}
+
+      {/* LEAD EDIT REQUEST MODAL (Admin proposes, CEO authorizes) */}
+      {showEditModal && editTargetLead && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-slate-900/60 backdrop-blur-xs p-4 overflow-y-auto">
+          <div className="bg-white rounded-2xl max-w-3xl w-full shadow-2xl border border-slate-200 my-8 overflow-hidden animate-in fade-in zoom-in-95">
+            <div className="p-6 bg-slate-900 text-white flex items-center justify-between">
+              <div>
+                <div className="flex items-center space-x-2">
+                  <h3 className="font-bold text-base">Request Lead Edit</h3>
+                  <span className="px-2 py-0.5 rounded text-[10px] font-bold bg-amber-500/30 text-amber-300 border border-amber-400/30">
+                    Requires CEO Approval
+                  </span>
+                </div>
+                <p className="text-xs text-slate-400 font-mono mt-0.5">
+                  Lead: {editTargetLead.customerName} ({editTargetLead.fileReference})
+                </p>
+              </div>
+              <button onClick={() => setShowEditModal(false)} className="text-slate-400 hover:text-white">
+                <X className="w-5 h-5" />
+              </button>
+            </div>
+
+            <form onSubmit={handleSubmitEditRequest} className="p-6 space-y-5 max-h-[80vh] overflow-y-auto text-xs">
+              {editError && (
+                <div className="p-3 rounded-lg bg-rose-50 border border-rose-200 text-rose-700 flex items-center space-x-2">
+                  <AlertTriangle className="w-4 h-4 shrink-0" />
+                  <span>{editError}</span>
+                </div>
+              )}
+
+              {/* Mandatory Reason Box */}
+              <div className="p-4 bg-amber-50/70 border border-amber-200 rounded-xl space-y-1.5">
+                <label className="block text-amber-950 font-bold">
+                  Reason for Edit Request (Mandatory for Executive Review) *
+                </label>
+                <textarea
+                  required
+                  rows={2}
+                  placeholder="e.g. Customer provided updated electricity bill for residential address correction; phone number updated after OTP check..."
+                  value={editReason}
+                  onChange={(e) => setEditReason(e.target.value)}
+                  className="w-full p-2.5 border border-amber-300 rounded-lg focus:border-amber-600 focus:outline-none bg-white text-slate-900"
+                />
+                <p className="text-[11px] text-amber-800">
+                  🔒 This edit will NOT overwrite live customer data immediately. It will be sent to CEO Rajesh Singhania for final approval.
+                </p>
+              </div>
+
+              {/* SECTION 1: Customer Info */}
+              <div className="space-y-3">
+                <h4 className="font-bold text-slate-900 text-xs uppercase tracking-wider flex items-center space-x-1.5 text-blue-900">
+                  <Users className="w-3.5 h-3.5" />
+                  <span>1. Customer & Co-Applicant Profile</span>
+                </h4>
+                <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
+                  <div>
+                    <label className="block text-slate-700 font-semibold mb-1">Customer Name *</label>
+                    <input
+                      type="text"
+                      required
+                      value={editFormData.customerName}
+                      onChange={(e) => setEditFormData({ ...editFormData, customerName: e.target.value })}
+                      className="w-full p-2 border border-slate-300 rounded-lg focus:border-blue-600 focus:outline-none"
+                    />
+                  </div>
+                  <div>
+                    <label className="block text-slate-700 font-semibold mb-1">Father's Name *</label>
+                    <input
+                      type="text"
+                      required
+                      value={editFormData.fatherName}
+                      onChange={(e) => setEditFormData({ ...editFormData, fatherName: e.target.value })}
+                      className="w-full p-2 border border-slate-300 rounded-lg focus:border-blue-600 focus:outline-none"
+                    />
+                  </div>
+                  <div>
+                    <label className="block text-slate-700 font-semibold mb-1">Co-Applicant Name *</label>
+                    <input
+                      type="text"
+                      required
+                      value={editFormData.coApplicantName}
+                      onChange={(e) => setEditFormData({ ...editFormData, coApplicantName: e.target.value })}
+                      className="w-full p-2 border border-slate-300 rounded-lg focus:border-blue-600 focus:outline-none"
+                    />
+                  </div>
+                  <div>
+                    <label className="block text-slate-700 font-semibold mb-1">Customer Contact Number *</label>
+                    <input
+                      type="tel"
+                      required
+                      value={editFormData.customerContactNumber}
+                      onChange={(e) => setEditFormData({ ...editFormData, customerContactNumber: e.target.value })}
+                      className="w-full p-2 border border-slate-300 rounded-lg focus:border-blue-600 focus:outline-none"
+                    />
+                  </div>
+                  <div>
+                    <label className="block text-slate-700 font-semibold mb-1">Co-Applicant Contact Number *</label>
+                    <input
+                      type="tel"
+                      required
+                      value={editFormData.coApplicantContactNumber}
+                      onChange={(e) => setEditFormData({ ...editFormData, coApplicantContactNumber: e.target.value })}
+                      className="w-full p-2 border border-slate-300 rounded-lg focus:border-blue-600 focus:outline-none"
+                    />
+                  </div>
+                  <div className="sm:col-span-3">
+                    <label className="block text-slate-700 font-semibold mb-1">Customer Address *</label>
+                    <input
+                      type="text"
+                      required
+                      value={editFormData.customerAddress}
+                      onChange={(e) => setEditFormData({ ...editFormData, customerAddress: e.target.value })}
+                      className="w-full p-2 border border-slate-300 rounded-lg focus:border-blue-600 focus:outline-none"
+                    />
+                  </div>
+                </div>
+              </div>
+
+              {/* SECTION 2: Vehicle Specs */}
+              <div className="space-y-3 pt-3 border-t border-slate-100">
+                <h4 className="font-bold text-slate-900 text-xs uppercase tracking-wider flex items-center space-x-1.5 text-blue-900">
+                  <Car className="w-3.5 h-3.5" />
+                  <span>2. Vehicle Specifications</span>
+                </h4>
+                <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
+                  <div>
+                    <label className="block text-slate-700 font-semibold mb-1">Vehicle Registration No *</label>
+                    <input
+                      type="text"
+                      required
+                      value={editFormData.vehicleNumber}
+                      onChange={(e) => setEditFormData({ ...editFormData, vehicleNumber: e.target.value.toUpperCase() })}
+                      className="w-full p-2 font-mono uppercase border border-slate-300 rounded-lg focus:border-blue-600 focus:outline-none"
+                    />
+                  </div>
+                  <div>
+                    <label className="block text-slate-700 font-semibold mb-1">Vehicle Make *</label>
+                    <input
+                      type="text"
+                      required
+                      value={editFormData.vehicleMake}
+                      onChange={(e) => setEditFormData({ ...editFormData, vehicleMake: e.target.value })}
+                      className="w-full p-2 border border-slate-300 rounded-lg focus:border-blue-600 focus:outline-none"
+                    />
+                  </div>
+                  <div>
+                    <label className="block text-slate-700 font-semibold mb-1">Vehicle Model *</label>
+                    <input
+                      type="text"
+                      required
+                      value={editFormData.vehicleModel}
+                      onChange={(e) => setEditFormData({ ...editFormData, vehicleModel: e.target.value })}
+                      className="w-full p-2 border border-slate-300 rounded-lg focus:border-blue-600 focus:outline-none"
+                    />
+                  </div>
+                </div>
+              </div>
+
+              {/* SECTION 3: Lender & ASM */}
+              <div className="space-y-3 pt-3 border-t border-slate-100">
+                <h4 className="font-bold text-slate-900 text-xs uppercase tracking-wider flex items-center space-x-1.5 text-blue-900">
+                  <Building2 className="w-3.5 h-3.5" />
+                  <span>3. Lender & ASM Details</span>
+                </h4>
+                <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
+                  <div>
+                    <label className="block text-slate-700 font-semibold mb-1">Active Lender *</label>
+                    <select
+                      value={editFormData.lenderId}
+                      onChange={(e) => handleEditLenderChange(e.target.value)}
+                      className="w-full p-2 border border-slate-300 rounded-lg focus:border-blue-600 focus:outline-none bg-white font-medium"
+                    >
+                      {activeLenders.map((l) => (
+                        <option key={l.id} value={l.id}>{l.name}</option>
+                      ))}
+                    </select>
+                  </div>
+                  <div>
+                    <label className="block text-slate-700 font-semibold mb-1">ASM Name *</label>
+                    <input
+                      type="text"
+                      required
+                      value={editFormData.asmName}
+                      onChange={(e) => setEditFormData({ ...editFormData, asmName: e.target.value })}
+                      className="w-full p-2 border border-slate-300 rounded-lg focus:border-blue-600 focus:outline-none"
+                    />
+                  </div>
+                  <div>
+                    <label className="block text-slate-700 font-semibold mb-1">ASM Contact Number *</label>
+                    <input
+                      type="tel"
+                      required
+                      value={editFormData.asmContactNumber}
+                      onChange={(e) => setEditFormData({ ...editFormData, asmContactNumber: e.target.value })}
+                      className="w-full p-2 border border-slate-300 rounded-lg focus:border-blue-600 focus:outline-none"
+                    />
+                  </div>
+                </div>
+              </div>
+
+              {/* SECTION 4: Bank Account */}
+              <div className="space-y-3 pt-3 border-t border-slate-100">
+                <h4 className="font-bold text-slate-900 text-xs uppercase tracking-wider flex items-center space-x-1.5 text-blue-900">
+                  <FileText className="w-3.5 h-3.5" />
+                  <span>4. Customer Bank Details</span>
+                </h4>
+                <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
+                  <div>
+                    <label className="block text-slate-700 font-semibold mb-1">Bank Name *</label>
+                    <input
+                      type="text"
+                      required
+                      value={editFormData.bankName}
+                      onChange={(e) => setEditFormData({ ...editFormData, bankName: e.target.value })}
+                      className="w-full p-2 border border-slate-300 rounded-lg focus:border-blue-600 focus:outline-none"
+                    />
+                  </div>
+                  <div>
+                    <label className="block text-slate-700 font-semibold mb-1">Account Number *</label>
+                    <input
+                      type="text"
+                      required
+                      value={editFormData.accountNumber}
+                      onChange={(e) => setEditFormData({ ...editFormData, accountNumber: e.target.value })}
+                      className="w-full p-2 font-mono border border-slate-300 rounded-lg focus:border-blue-600 focus:outline-none"
+                    />
+                  </div>
+                  <div>
+                    <label className="block text-slate-700 font-semibold mb-1">IFSC Code *</label>
+                    <input
+                      type="text"
+                      required
+                      value={editFormData.ifscCode}
+                      onChange={(e) => setEditFormData({ ...editFormData, ifscCode: e.target.value.toUpperCase() })}
+                      className="w-full p-2 font-mono uppercase border border-slate-300 rounded-lg focus:border-blue-600 focus:outline-none"
+                    />
+                  </div>
+                </div>
+              </div>
+
+              <div className="pt-4 border-t border-slate-200 flex justify-end space-x-3">
+                <button
+                  type="button"
+                  onClick={() => setShowEditModal(false)}
+                  className="px-4 py-2 border border-slate-200 rounded-xl text-slate-700 font-semibold hover:bg-slate-50"
+                >
+                  Cancel
+                </button>
+                <button
+                  type="submit"
+                  className="px-5 py-2 bg-amber-600 hover:bg-amber-700 text-white rounded-xl font-bold shadow-xs flex items-center space-x-1.5"
+                >
+                  <Clock className="w-3.5 h-3.5" />
+                  <span>Submit Edit Request to CEO</span>
+                </button>
+              </div>
+            </form>
+          </div>
+        </div>
+      )}
+
+      {/* LEAD DELETION REQUEST MODAL (Admin proposes, CEO authorizes) */}
+      {showDeleteModal && deleteTargetLead && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-slate-900/60 backdrop-blur-xs p-4">
+          <div className="bg-white rounded-2xl max-w-lg w-full p-6 shadow-2xl border border-slate-200 animate-in fade-in zoom-in-95">
+            <div className="flex items-center space-x-3 pb-3 border-b border-slate-100 text-rose-600">
+              <div className="p-2.5 bg-rose-100 rounded-xl text-rose-700">
+                <Trash2 className="w-6 h-6" />
+              </div>
+              <div>
+                <h3 className="font-extrabold text-base text-slate-900">Request Lead Deletion</h3>
+                <p className="text-xs text-slate-500">Subject to CEO Rajesh Singhania approval</p>
+              </div>
+            </div>
+
+            <form onSubmit={handleSubmitDeleteRequest} className="mt-4 space-y-4 text-xs">
+              {deleteError && (
+                <div className="p-3 rounded-lg bg-rose-50 border border-rose-200 text-rose-700 flex items-center space-x-2">
+                  <AlertTriangle className="w-4 h-4 shrink-0" />
+                  <span>{deleteError}</span>
+                </div>
+              )}
+
+              <div className="p-3 bg-slate-50 rounded-xl border border-slate-200 space-y-1.5">
+                <div><span className="text-slate-500">Customer:</span> <strong className="text-slate-900">{deleteTargetLead.customerName}</strong></div>
+                <div><span className="text-slate-500">File Reference:</span> <strong className="font-mono text-slate-700">{deleteTargetLead.fileReference}</strong></div>
+                <div><span className="text-slate-500">Vehicle:</span> <strong className="font-mono text-blue-700">{deleteTargetLead.vehicleNumber}</strong> ({deleteTargetLead.vehicleMake} {deleteTargetLead.vehicleModel})</div>
+                <div><span className="text-slate-500">Lender:</span> <strong className="text-slate-800">{deleteTargetLead.lenderName}</strong></div>
+              </div>
+
+              <div className="p-3 bg-rose-50/70 border border-rose-200 rounded-xl text-[11px] text-rose-900">
+                ⚠️ <strong>Administrative Policy:</strong> Leads cannot be directly erased by Operations. Deletion requests are recorded in the security audit trail and sent to the CEO for authorization.
+              </div>
+
+              <div>
+                <label className="block text-slate-900 font-bold mb-1">
+                  Reason for Deletion Request (Mandatory) *
+                </label>
+                <textarea
+                  required
+                  rows={3}
+                  placeholder="Explain why this customer file should be deleted (e.g. Duplicate test record, customer opted out prior to sanction)..."
+                  value={deleteReason}
+                  onChange={(e) => setDeleteReason(e.target.value)}
+                  className="w-full p-2.5 border border-slate-300 rounded-lg focus:border-rose-600 focus:outline-none"
+                />
+              </div>
+
+              <div className="pt-3 border-t border-slate-100 flex justify-end space-x-2">
+                <button
+                  type="button"
+                  onClick={() => setShowDeleteModal(false)}
+                  className="px-4 py-2 border border-slate-200 rounded-xl text-slate-700 font-semibold hover:bg-slate-50"
+                >
+                  Cancel
+                </button>
+                <button
+                  type="submit"
+                  className="px-4 py-2 bg-rose-600 hover:bg-rose-700 text-white rounded-xl font-bold flex items-center space-x-1.5 shadow-xs"
+                >
+                  <Trash2 className="w-3.5 h-3.5" />
+                  <span>Submit Deletion Request to CEO</span>
+                </button>
+              </div>
+            </form>
+          </div>
+        </div>
+      )}
+
+      {/* CEO REVIEW MODAL (Approve or Reject with optional Remarks) */}
+      {showReviewModal && reviewTargetRequest && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-slate-900/60 backdrop-blur-xs p-4">
+          <div className="bg-white rounded-2xl max-w-md w-full p-6 shadow-2xl border border-slate-200 animate-in fade-in zoom-in-95">
+            <div className="flex items-center space-x-3 pb-3 border-b border-slate-100">
+              <div
+                className={`p-2.5 rounded-xl ${
+                  reviewAction === 'APPROVE' ? 'bg-emerald-100 text-emerald-700' : 'bg-rose-100 text-rose-700'
+                }`}
+              >
+                {reviewAction === 'APPROVE' ? <Check className="w-6 h-6" /> : <X className="w-6 h-6" />}
+              </div>
+              <div>
+                <h3 className="font-extrabold text-base text-slate-900">
+                  {reviewAction === 'APPROVE' ? 'Approve' : 'Reject'} {reviewTargetRequest.requestType === 'EDIT' ? 'Edit Request' : 'Deletion Request'}
+                </h3>
+                <p className="text-xs text-slate-500">Executive CEO Decision</p>
+              </div>
+            </div>
+
+            <div className="mt-4 space-y-3 text-xs">
+              {reviewError && (
+                <div className="p-3 rounded-lg bg-rose-50 border border-rose-200 text-rose-700 flex items-center space-x-2">
+                  <AlertTriangle className="w-4 h-4 shrink-0" />
+                  <span>{reviewError}</span>
+                </div>
+              )}
+
+              <div className="p-3 bg-slate-50 rounded-xl border border-slate-200 space-y-1">
+                <div><strong>Lead:</strong> {reviewTargetRequest.customerName} ({reviewTargetRequest.leadFileReference})</div>
+                <div><strong>Requested By:</strong> {reviewTargetRequest.requestedByName} ({reviewTargetRequest.requestedByRole})</div>
+                <div><strong>Reason:</strong> "{reviewTargetRequest.reason}"</div>
+              </div>
+
+              <div>
+                <label className="block text-slate-700 font-semibold mb-1">
+                  CEO Executive Remarks / Justification (Optional)
+                </label>
+                <textarea
+                  rows={2}
+                  placeholder={reviewAction === 'APPROVE' ? 'e.g. Approved per valid KYC proof...' : 'e.g. Rejected; keep original customer file...'}
+                  value={ceoRemarksInput}
+                  onChange={(e) => setCeoRemarksInput(e.target.value)}
+                  className="w-full p-2 border border-slate-300 rounded-lg focus:border-blue-600 focus:outline-none"
+                />
+              </div>
+
+              <div className="pt-3 border-t border-slate-100 flex justify-end space-x-2">
+                <button
+                  type="button"
+                  onClick={() => setShowReviewModal(false)}
+                  className="px-4 py-2 border border-slate-200 rounded-xl text-slate-700 font-semibold hover:bg-slate-50"
+                >
+                  Cancel
+                </button>
+                <button
+                  type="button"
+                  onClick={handleExecuteReview}
+                  className={`px-4 py-2 rounded-xl text-xs font-bold text-white shadow-xs flex items-center space-x-1.5 ${
+                    reviewAction === 'APPROVE'
+                      ? 'bg-emerald-600 hover:bg-emerald-700'
+                      : 'bg-rose-600 hover:bg-rose-700'
+                  }`}
+                >
+                  {reviewAction === 'APPROVE' ? <Check className="w-3.5 h-3.5" /> : <X className="w-3.5 h-3.5" />}
+                  <span>Confirm {reviewAction === 'APPROVE' ? 'Approval' : 'Rejection'}</span>
+                </button>
+              </div>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Floating Toast Notification */}
+      {toastMessage && (
+        <div className="fixed bottom-6 right-6 z-50 flex items-center space-x-2 px-4 py-3 bg-emerald-600 text-white rounded-xl shadow-2xl text-xs font-bold animate-in slide-in-from-bottom-5">
+          <CheckCircle className="w-4 h-4 shrink-0 text-white" />
+          <span>{toastMessage}</span>
+        </div>
+      )}
     </div>
   );
 };
